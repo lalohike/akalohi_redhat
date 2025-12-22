@@ -1,0 +1,18 @@
+---
+# tasks file for cleanup_ami_snapshots
+
+- name: Gather information about an AMI with 'AMI Name' equal to "{{ exported_image_id }}"
+  amazon.aws.ec2_ami_info:
+    filters:
+      name: "{{ exported_image_id }}"
+  register: associated_ami_info
+
+- name: Display Associated AMI ID
+  ansible.builtin.debug:
+    var: associated_ami_info.images[0].image_id
+
+- name: Deregister AMI & Delete associated Snapshot
+  amazon.aws.ec2_ami:
+    image_id: "{{ associated_ami_info.images[0].image_id }}"
+    delete_snapshot: true
+    state: absent

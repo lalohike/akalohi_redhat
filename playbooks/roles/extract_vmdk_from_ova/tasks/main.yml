@@ -1,0 +1,33 @@
+---
+# tasks file for extract_vmdk_from_ova
+
+- name: Create /tmp/image_conversion Directory
+  ansible.builtin.file:
+    path: /tmp/image_conversion
+    state: directory
+    mode: '0755'
+
+- name: GET OVA from S3 Bucket
+  amazon.aws.s3_object:
+    bucket: "{{ s3_bucket_name }}"
+    object: "{{ ova_full_pathname }}"
+    dest: "/tmp/image_conversion/{{ exported_image_id }}.ova"
+    mode: get
+    access_key: "{{ aws_access_key }}"
+    secret_key: "{{ aws_secret_key }}"
+
+- name: Unarchive OVA TAR file
+  ansible.builtin.unarchive:
+    src: "/tmp/image_conversion/{{ exported_image_id }}.ova"
+    dest: /tmp/image_conversion/
+    remote_src: yes
+
+- name: Find VMDK file in /tmp/image_conversion/ Directory
+  ansible.builtin.find:
+    paths: /tmp/image_conversion
+    patterns: '*.vmdk'
+  register: vmdk_files
+
+- name: Set 'path_to_vmdk' variable
+  ansible.builtin.set_fact:
+    path_to_vmdk: "{{ vmdk_files.files[0].path }}"

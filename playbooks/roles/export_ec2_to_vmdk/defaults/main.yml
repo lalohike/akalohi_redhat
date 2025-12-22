@@ -1,9 +1,0 @@
----
-# defaults file for export_ec2_to_vmdk
-# these need to be made into surveys
-#aws_region: us-east-2
-target_environment: vmware
-disk_image_format: vmdk
-#s3_bucket_name: akalohi-aws-bucket-1 
-s3_bucket_path: "Exports/vmdk/"
-#iam_role_name: vmimport

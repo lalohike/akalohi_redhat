@@ -1,0 +1,27 @@
+---
+# tasks file for upload_files_to_s3
+
+- name: PUT VMDK, VHD, & QCOW2 files into S3 Bucket
+  amazon.aws.s3_object:
+    bucket: "{{ s3_bucket_name }}"
+    src: "{{ item.local_source_file }}"
+    object: "{{ item.s3_destination_path }}"
+    mode: put
+    access_key: "{{ aws_access_key }}"
+    secret_key: "{{ aws_secret_key }}"
+  loop:
+    - local_source_file: "{{ path_to_vmdk }}"
+      s3_destination_path: "Exports/vmdk/{{ exported_image_id }}.vmdk"
+    - local_source_file: "{{ path_to_vhd }}"
+      s3_destination_path: "Exports/vhd/{{ exported_image_id }}.vhd"  
+    - local_source_file: "{{ path_to_qcow2 }}"
+      s3_destination_path: "Exports/qcow2/{{ exported_image_id }}.qcow2"
+  register: s3_upload_results
+
+- name: Add Final S3 Pathname Variables to 'localhost'
+  ansible.builtin.add_host:
+    name: "{{ execution_host_ip }}"
+    groups: execution_host
+    vmdk_full_pathname: "{{ s3_upload_results.results[0].invocation.module_args.object }}"
+    vhd_full_pathname: "{{ s3_upload_results.results[1].invocation.module_args.object }}"
+    qcow2_full_pathname: "{{ s3_upload_results.results[2].invocation.module_args.object }}"

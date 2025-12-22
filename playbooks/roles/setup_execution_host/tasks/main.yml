@@ -1,0 +1,45 @@
+---
+# tasks file for setup_execution_host
+
+- name: Install pip and awscli
+  ansible.builtin.package:
+    name: 
+      - python3-pip
+      - awscli
+    state: latest
+
+- name: Install boto3 and botocore (AWS SDK)
+  ansible.builtin.pip:
+    name:
+     - boto3
+     - botocore
+    executable: pip3
+
+- name: Create AWS credentials directory
+  ansible.builtin.file:
+    path: /root/.aws
+    state: directory
+    mode: '0700'
+
+- name: Configure AWS credentials
+  ansible.builtin.copy:
+    dest: /root/.aws/credentials
+    content: |
+      [default]
+      aws_access_key_id = {{ aws_access_key }}
+      aws_secret_access_key = {{ aws_secret_key }}
+    mode: '0600'
+
+- name: Configure AWS region
+  ansible.builtin.copy:
+    dest: /root/.aws/config
+    content: |
+      [default]
+      region = {{ aws_region }}
+    mode: '0600'
+
+- name: Set the 'execution_host_ip' Variable Dynamically
+  ansible.builtin.add_host:
+    name: "{{ groups['execution_host'][0] }}"
+    groups: all
+    execution_host_ip: "{{ groups['execution_host'][0] }}"

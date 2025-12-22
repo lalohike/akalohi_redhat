@@ -1,0 +1,15 @@
+---
+# tasks file for verify_ova_export
+
+- name: Wait, Check every 30 seconds for 60 minutes until OVA appears in S3 bucket
+  amazon.aws.s3_object_info:
+    aws_region: "{{ aws_region }}"
+    bucket_name: "{{ s3_bucket_name }}"
+    object_name: "{{ ova_full_pathname }}"
+    access_key: "{{ aws_access_key }}"
+    secret_key: "{{ aws_secret_key }}"
+  register: s3_check
+  retries: 120
+  delay: 30
+  until: s3_check.object_info[0].object_data is defined
+  ignore_errors: false

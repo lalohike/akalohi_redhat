@@ -1,0 +1,37 @@
+---
+# tasks file for create_ec2_vhd
+
+- name: Launch EC2 Dummy Instance for OVA Export
+  amazon.aws.ec2_instance:
+    name: dummy_instance
+    # key_name: "{{ ec2_key_name }}"
+    instance_type: "{{ ec2_instance_type }}"
+    image_id: "{{ ami_image_id }}"
+    count: 1
+    vpc_subnet_id: "{{ ec2_subnet_id }}"
+    security_group: "{{ ec2_security_group }}"
+    region: "{{ aws_region }}"
+    state: running
+    wait: true
+    # network_interfaces:
+    #   - assign_public_ip: true
+  register: ec2_dummy_result
+
+- name: Wait for instance to pass 2/2 checks using AWS CLI
+  ansible.builtin.shell: |
+    aws ec2 wait instance-status-ok \
+    --instance-ids {{ ec2_dummy_result.instances[0].instance_id }} \
+    --region {{ aws_region }}
+  changed_when: false
+
+- name: Add 'dummy_ec2_instance_id' variable to localhost
+  ansible.builtin.add_host:
+    name: "{{ execution_host_ip }}"
+    groups: execution_host
+    dummy_ec2_instance_id: "{{ ec2_dummy_result.instances[0].instance_id }}"
+
+- name: Add 'dummy_ec2_instance_id' variable to ova instance
+  ansible.builtin.add_host:
+    name: "{{ ova_instance_public_ip }}"
+    groups: ova_instances
+    dummy_ec2_instance_id: "{{ ec2_dummy_result.instances[0].instance_id }}"

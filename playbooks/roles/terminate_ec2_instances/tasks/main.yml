@@ -1,20 +1,23 @@
 ---
 # tasks file for terminate_ec2_instances
 
-- name: Terminate vmdk EC2 Instance
+- name: Terminate OVA EC2 Instances
   amazon.aws.ec2_instance:
-    instance_ids: "{{ vmdk_instance_id }}"
+    instance_ids: "{{ item }}"
     region: "{{ aws_region }}"
     state: terminated
     access_key: "{{ aws_access_key }}"
     secret_key: "{{ aws_secret_key }}"
     wait: true
+  loop:
+    - "{{ ova_instance_id }}"
+    - "{{ dummy_ec2_instance_id }}"
 
-- name: Terminate vhd EC2 Instance
-  amazon.aws.ec2_instance:
-    instance_ids: "{{ vhd_instance_id }}"
-    region: "{{ aws_region }}"
-    state: terminated
-    access_key: "{{ aws_access_key }}"
-    secret_key: "{{ aws_secret_key }}"
-    wait: true
+- name: All Image Conversions COMPLETE!
+  ansible.builtin.debug:
+    msg: "{{ item }}"
+  loop:
+    - "OVA: {{ ova_full_pathname }}"
+    - "VMDK: {{ vmdk_full_pathname }}"
+    - "VHD: {{ vhd_full_pathname }}"
+    - "QCOW2: {{ qcow2_full_pathname }}"

@@ -1,0 +1,46 @@
+---
+# tasks file for convert_vmdk_to_vhd_qcow2
+
+- name: set 'path_to_vhd' & 'path_to_qcow2' variable
+  ansible.builtin.set_fact:
+    path_to_vhd: "/tmp/image_conversion/{{ exported_image_id }}.vhd"
+    path_to_qcow2: "/tmp/image_conversion/{{ exported_image_id }}.qcow2"
+
+- name: Install qemu-img package 
+  ansible.builtin.package:
+    name: qemu-img
+    state: installed
+    
+- name: Convert VMDK to VHD and QCOW2 (Command Module)
+  ansible.builtin.command:
+    cmd: >
+      qemu-img convert
+      -f "{{ item.input_format }}"
+      -O "{{ item.output_format }}"
+      "{{ item.source_file }}"
+      "{{ item.destination_file }}"
+  loop:
+    - input_format: vmdk
+      output_format: vpc
+      source_file: "{{ path_to_vmdk }}"
+      destination_file: "{{ path_to_vhd }}"
+    - input_format: vmdk
+      output_format: qcow2
+      source_file: "{{ path_to_vmdk }}"
+      destination_file: "{{ path_to_qcow2 }}"
+
+# - name: Convert VMDK to VHD and QCOW2 (Custom Ansible Module)
+#   qemu_convert:
+#     input_format: "{{ item.input_format }}"
+#     output_format: "{{ item.output_format }}"
+#     src: "{{ item.source_file }}"
+#     dest: "{{ item.destination_file }}"
+#   loop:
+#     - input_format: vmdk
+#       output_format: vpc
+#       source_file: "{{ path_to_vmdk }}"
+#       destination_file: "{{ path_to_vhd }}"
+#     - input_format: vmdk
+#       output_format: qcow2
+#       source_file: "{{ path_to_vmdk }}"
+#       destination_file: "{{ path_to_qcow2 }}"

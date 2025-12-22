@@ -3,43 +3,40 @@
 # Collections needed for this playbook
 #  - amazon.aws
 
-- name: Setup Runner and Create 1st EC2 Instance for VMDK Export
-  hosts: localhost
+- name: Setup Execution Host and Create two EC2 Instances for OVA & VHD Export
+  hosts: execution_host
   remote_user: ec2-user
   roles:
-    - setup_runner
-    - create_ec2_vmdk
+    - setup_execution_host
+    - create_ec2_ova
+    - create_ec2_dummy
 
-- name: Run Export VMDK on 1st EC2 Instance
-  hosts: vmdk_instances
-  remote_user: ec2-user
-  environment:
-    AWS_ACCESS_KEY_ID: "{{ aws_access_key }}"
-    AWS_SECRET_ACCESS_KEY: "{{ aws_secret_key }}"
-  roles:
-    - export_ec2_to_vmdk
-
-- name: Create 2nd EC2 Instance for VHD Export
-  hosts: localhost
-  remote_user: ec2-user
-  roles:
-    - create_ec2_vhd
-
-- name: Run Export VHD on 2nd EC2 Instance
-  hosts: vhd_instances
+- name: Export OVA from Dummy Instance
+  hosts: ova_instances
   remote_user: ec2-user
   environment:
     AWS_ACCESS_KEY_ID: "{{ aws_access_key }}"
     AWS_SECRET_ACCESS_KEY: "{{ aws_secret_key }}"
   roles:
-    - export_ec2_to_vhd
+    - export_ec2_to_ova
 
-- name: Wait for Exports to Complete and appear in S3 Bucket
-  hosts: localhost
+- name: Wait for OVA Export to complete and appear in S3 Bucket
+  hosts: execution_host
+  remote_user: ec2-user
   roles:
-  - verify_s3_exports
+    - verify_ova_export
 
-- name: Terminate EC2 Instances
-  hosts: localhost
+- name: Create VMDK, VHD and QCOW2 Images from OVA
+  hosts: ova_instances
+  remote_user: ec2-user
   roles:
-  - terminate_ec2_instances
+    - extract_vmdk_from_ova
+    - convert_vmdk_to_vhd_qcow2
+    - upload_files_to_s3
+
+- name: Cleanup AMIs, Snapshots, and Instances
+  hosts: execution_host
+  remote_user: ec2-user
+  roles:
+    - cleanup_ami_snapshots
+    - terminate_ec2_instances
